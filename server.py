@@ -160,7 +160,7 @@ def safe_text(value: Any, max_len: int = 600) -> str:
 
 
 # ---------------------------------------------------------------------
-# API key discovery patterns + live validators
+# API key discovery patterns + chat probe
 # ---------------------------------------------------------------------
 
 KEY_PATTERNS: dict[str, re.Pattern] = {
@@ -190,62 +190,118 @@ def extract_keys(text: str) -> list[tuple[str, str]]:
     return hits
 
 
-def _http_get_json(url: str, headers: dict[str, str], timeout: int = 4) -> dict | None:
+def _post_probe(url: str, headers: dict[str, str], payload: dict | None, timeout: int = 6) -> int | None:
+    """POST a tiny request; return HTTP status code or None on network failure."""
     try:
-        req = Request(url, headers={**headers, "User-Agent": "NIGHTSCAN-keys/1.0"})
+        body = json.dumps(payload).encode("utf-8") if payload is not None else b""
+        req = Request(
+            url,
+            data=body,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "NIGHTSCAN-keys/1.0",
+                **headers,
+                **({"Content-Type": "application/json"} if payload is not None else {}),
+            },
+            method="POST" if payload is not None else "GET",
+        )
         with urlopen(req, timeout=timeout) as response:
-            return json.loads(response.read(2_000_000).decode("utf-8", "replace"))
+            response.read(2048)
+            return response.status
     except HTTPError as exc:
-        return {"__status__": exc.code}
+        return exc.code
     except (URLError, TimeoutError, json.JSONDecodeError):
         return None
 
 
-def validate_key(provider: str, key: str) -> bool:
+def probe_key(provider: str, key: str) -> str:
+    """
+    Real 1-token probe. Returns:
+      "live"    — provider accepted a real inference request (200/201)
+      "limited" — provider recognized the key but 429'd (quota or rate limit)
+      "dead"    — 401/403/malformed/unknown — do not surface to UI
+    """
     if provider == "anthropic":
-        data = _http_get_json(
-            "https://api.anthropic.com/v1/models",
+        code = _post_probe(
+            "https://api.anthropic.com/v1/messages",
             {"x-api-key": key, "anthropic-version": "2023-06-01"},
+            {
+                "model": "claude-3-5-haiku-latest",
+                "max_tokens": 1,
+                "messages": [{"role": "user", "content": "hi"}],
+            },
         )
-        return isinstance(data, dict) and "data" in data and "__status__" not in data
-
-    if provider.startswith("openai") or provider in {"groq", "mistral", "openrouter", "cohere"}:
-        bases = {
-            "openai":     "https://api.openai.com/v1/models",
-            "openai-min": "https://api.openai.com/v1/models",
-            "groq":       "https://api.groq.com/openai/v1/models",
-            "mistral":    "https://api.mistral.ai/v1/models",
-            "openrouter": "https://openrouter.ai/api/v1/auth/key",
-            "cohere":     "https://api.cohere.com/v1/models",
-        }
-        data = _http_get_json(
-            bases[provider],
+    elif provider.startswith("openai"):
+        code = _post_probe(
+            "https://api.openai.com/v1/chat/completions",
             {"Authorization": f"Bearer {key}"},
+            {
+                "model": "gpt-4o-mini",
+                "max_tokens": 1,
+                "messages": [{"role": "user", "content": "hi"}],
+            },
         )
-        return isinstance(data, dict) and "__status__" not in data
-
-    if provider == "google":
-        data = _http_get_json(
-            f"https://generativelanguage.googleapis.com/v1beta/models?key={quote(key)}",
+    elif provider == "groq":
+        code = _post_probe(
+            "https://api.groq.com/openai/v1/chat/completions",
+            {"Authorization": f"Bearer {key}"},
+            {
+                "model": "llama-3.1-8b-instant",
+                "max_tokens": 1,
+                "messages": [{"role": "user", "content": "hi"}],
+            },
+        )
+    elif provider == "mistral":
+        code = _post_probe(
+            "https://api.mistral.ai/v1/chat/completions",
+            {"Authorization": f"Bearer {key}"},
+            {
+                "model": "mistral-small-latest",
+                "max_tokens": 1,
+                "messages": [{"role": "user", "content": "hi"}],
+            },
+        )
+    elif provider == "openrouter":
+        code = _post_probe(
+            "https://openrouter.ai/api/v1/auth/key",
+            {"Authorization": f"Bearer {key}"},
+            None,
+        )
+    elif provider == "cohere":
+        code = _post_probe(
+            "https://api.cohere.com/v1/chat",
+            {"Authorization": f"Bearer {key}"},
+            {"model": "command-r", "message": "hi", "max_tokens": 1},
+        )
+    elif provider == "google":
+        code = _post_probe(
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={quote(key)}",
             {},
+            {
+                "contents": [{"parts": [{"text": "hi"}]}],
+                "generationConfig": {"maxOutputTokens": 1},
+            },
         )
-        return isinstance(data, dict) and "__status__" not in data
-
-    if provider == "github":
-        data = _http_get_json(
+    elif provider == "github":
+        code = _post_probe(
             "https://api.github.com/user",
             {"Authorization": f"token {key}"},
+            None,
         )
-        return isinstance(data, dict) and "__status__" not in data
-
-    if provider.startswith("stripe"):
-        data = _http_get_json(
+    elif provider.startswith("stripe"):
+        code = _post_probe(
             "https://api.stripe.com/v1/balance",
             {"Authorization": f"Bearer {key}"},
+            None,
         )
-        return isinstance(data, dict) and "__status__" not in data
+    else:
+        return "dead"
 
-    return False
+    if code in (200, 201):
+        return "live"
+    if code == 429:
+        return "limited"
+    return "dead"
 
 
 # ---------------------------------------------------------------------
@@ -472,12 +528,15 @@ def init_db() -> None:
                     source_url TEXT,
                     discovered_at TEXT NOT NULL,
                     validated BOOLEAN NOT NULL DEFAULT FALSE,
+                    status TEXT NOT NULL DEFAULT 'unknown',
                     scan_id TEXT
                 )""",
+                "ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'unknown'",
                 "CREATE INDEX IF NOT EXISTS idx_library_created ON api_library(created_at DESC)",
                 "CREATE INDEX IF NOT EXISTS idx_rate ON rate_events(bucket, ts)",
                 "CREATE INDEX IF NOT EXISTS idx_keys_provider ON api_keys(provider)",
                 "CREATE INDEX IF NOT EXISTS idx_keys_validated ON api_keys(validated)",
+                "CREATE INDEX IF NOT EXISTS idx_keys_status ON api_keys(status)",
             ]
             for statement in statements:
                 con.execute(statement)
@@ -516,13 +575,19 @@ def init_db() -> None:
                     source_url TEXT,
                     discovered_at TEXT NOT NULL,
                     validated INTEGER NOT NULL DEFAULT 0,
+                    status TEXT NOT NULL DEFAULT 'unknown',
                     scan_id TEXT
                 );
                 CREATE INDEX IF NOT EXISTS idx_library_created ON api_library(created_at DESC);
                 CREATE INDEX IF NOT EXISTS idx_rate ON rate_events(bucket, ts);
                 CREATE INDEX IF NOT EXISTS idx_keys_provider ON api_keys(provider);
                 CREATE INDEX IF NOT EXISTS idx_keys_validated ON api_keys(validated);
+                CREATE INDEX IF NOT EXISTS idx_keys_status ON api_keys(status);
             """)
+            try:
+                con.execute("ALTER TABLE api_keys ADD COLUMN status TEXT NOT NULL DEFAULT 'unknown'")
+            except Exception:
+                pass
 
         count = con.execute("SELECT COUNT(*) AS count FROM api_library").fetchone()["count"]
         if count == 0:
@@ -972,63 +1037,74 @@ def discover():
         stage = "key_extraction"
         hits = llm_extract_keys(provider, model, api_key, search_results)
 
-        # validate up to 10 hits in parallel — worst case ~4s total, not 40s
+        # probe each candidate with a real 1-token inference call
         stage = "validation"
-        capped = hits[:10]
-        valid: list[dict[str, str]] = []
+        capped = hits[:12]
+        survivors: list[dict[str, str]] = []
 
         def _probe(item):
             hit_provider, key = item
-            ok = validate_key(hit_provider, key) if hit_provider != "unknown" else False
-            return {"provider": hit_provider, "key": key, "validated": bool(ok)}
+            status = probe_key(hit_provider, key) if hit_provider != "unknown" else "dead"
+            return {"provider": hit_provider, "key": key, "status": status}
 
         with ThreadPoolExecutor(max_workers=min(8, max(1, len(capped)))) as pool:
             futures = [pool.submit(_probe, item) for item in capped]
             for fut in as_completed(futures):
                 try:
-                    valid.append(fut.result())
+                    row = fut.result()
                 except Exception:
                     continue
+                if row["status"] in ("live", "limited"):
+                    survivors.append(row)
 
-        # persist all hits, dedupe by key
         stored_ok = 0
         with db() as con:
-            for row in valid:
+            for row in survivors:
                 try:
                     cursor = con.execute(
                         """INSERT OR IGNORE INTO api_keys
-                        (provider,key,source_url,discovered_at,validated,scan_id)
-                        VALUES (?,?,?,?,?,?)""",
+                        (provider,key,source_url,discovered_at,validated,scan_id,status)
+                        VALUES (?,?,?,?,?,?,?)""",
                         (
                             row["provider"],
                             row["key"],
                             "",
                             utc_now(),
-                            1 if row["validated"] else 0,
+                            1 if row["status"] == "live" else 0,
                             scan_id,
+                            row["status"],
                         ),
                     )
-                    # rowcount > 0 → real insert; 0 → dup skipped. sqlite returns 1, pg via shim passes through.
                     if getattr(cursor, "rowcount", 0) and cursor.rowcount > 0:
                         stored_ok += 1
                 except Exception:
                     pass
 
+        live = sum(1 for r in survivors if r["status"] == "live")
+        limited = sum(1 for r in survivors if r["status"] == "limited")
+        dropped = len(capped) - len(survivors)
+
         app.logger.info(
-            "Discovery complete (scan_id=%s, extracted=%s, valid=%s, stored=%s)",
-            scan_id, len(hits),
-            sum(1 for r in valid if r["validated"]),
-            stored_ok,
+            "Discovery complete (scan_id=%s, candidates=%s, live=%s, limited=%s, dropped=%s, stored=%s)",
+            scan_id, len(capped), live, limited, dropped, stored_ok,
         )
 
         return jsonify({
             "ok": True,
             "query": query,
             "search_count": len(search_results),
-            "hits": valid,
+            "hits": survivors,
+            "stats": {
+                "candidates": len(capped),
+                "live": live,
+                "limited": limited,
+                "dropped_dead": dropped,
+            },
+            "has_live": live > 0,
+            "live_keys": [r for r in survivors if r["status"] == "live"],
             "search_provider": "Tavily" if TAVILY_API_KEY else "DuckDuckGo",
             "scan_id": scan_id,
-            "note": "Raw candidates returned. Validated=True rows were accepted by the provider on the probe.",
+            "note": "Each candidate was probed with a real 1-token request. Dead keys (401/403) are filtered out before return.",
         })
 
     except HTTPError as exc:
@@ -1107,14 +1183,15 @@ def list_keys():
     with db() as con:
         if validated_only:
             rows = con.execute(
-                """SELECT id,provider,key,source_url,discovered_at,validated
-                FROM api_keys WHERE validated=1
+                """SELECT id,provider,key,source_url,discovered_at,validated,status
+                FROM api_keys WHERE status='live'
                 ORDER BY discovered_at DESC LIMIT 500""",
             ).fetchall()
         else:
             rows = con.execute(
-                """SELECT id,provider,key,source_url,discovered_at,validated
+                """SELECT id,provider,key,source_url,discovered_at,validated,status
                 FROM api_keys
+                WHERE status IN ('live','limited')
                 ORDER BY discovered_at DESC LIMIT 500""",
             ).fetchall()
 
@@ -1122,6 +1199,96 @@ def list_keys():
         "items": [dict(r) for r in rows],
         "count": len(rows),
     })
+
+
+# ---------------------------------------------------------------------
+# Share a discovered key into the API Library
+# ---------------------------------------------------------------------
+
+SHARE_PROVIDER_INFO = {
+    "anthropic": ("Anthropic", "AI / LLM", "https://api.anthropic.com/v1", "https://docs.anthropic.com/", "API key header"),
+    "openai": ("OpenAI", "AI / LLM", "https://api.openai.com/v1", "https://platform.openai.com/docs", "Bearer API key"),
+    "openai-min": ("OpenAI", "AI / LLM", "https://api.openai.com/v1", "https://platform.openai.com/docs", "Bearer API key"),
+    "groq": ("Groq", "AI inference", "https://api.groq.com/openai/v1", "https://console.groq.com/docs", "Bearer API key"),
+    "mistral": ("Mistral", "AI / LLM", "https://api.mistral.ai/v1", "https://docs.mistral.ai/", "Bearer API key"),
+    "openrouter": ("OpenRouter", "AI gateway", "https://openrouter.ai/api/v1", "https://openrouter.ai/docs", "Bearer API key"),
+    "cohere": ("Cohere", "AI / LLM", "https://api.cohere.com/v1", "https://docs.cohere.com/", "Bearer API key"),
+    "google": ("Google", "AI / LLM", "https://generativelanguage.googleapis.com/v1beta", "https://ai.google.dev/gemini-api/docs", "API key or OAuth"),
+    "github": ("GitHub", "Dev tools", "https://api.github.com", "https://docs.github.com/en/rest", "Bearer token"),
+    "stripe-live": ("Stripe", "Payments", "https://api.stripe.com/v1", "https://stripe.com/docs/api", "Bearer API key"),
+    "stripe-test": ("Stripe", "Payments", "https://api.stripe.com/v1", "https://stripe.com/docs/api", "Bearer API key"),
+}
+
+
+@app.post("/api/keys/share")
+def share_key():
+    user = current_user()
+    if not user:
+        return json_error("Sign in to share a key into the API Library.", 401)
+
+    data = request.get_json(silent=True) or {}
+    key_id = data.get("key_id")
+    try:
+        key_id = int(key_id)
+    except (TypeError, ValueError):
+        return json_error("Invalid key_id.")
+
+    with db() as con:
+        row = con.execute(
+            "SELECT provider,key,status FROM api_keys WHERE id=?",
+            (key_id,),
+        ).fetchone()
+
+    if not row:
+        return json_error("Key not found.", 404)
+
+    if row["status"] not in ("live", "limited"):
+        return json_error("Only live or rate-limited keys can be shared.", 400)
+
+    provider = row["provider"]
+    info = SHARE_PROVIDER_INFO.get(provider) or ("Unknown", "Other", "", "", "")
+    label, category, base_url, docs_url, auth_method = info
+
+    if not docs_url:
+        return json_error("No shareable documentation for this provider.", 400)
+
+    entry = {
+        "name": f"{label} key ({provider}) — shared",
+        "provider": label,
+        "category": category,
+        "base_url": base_url or docs_url,
+        "docs_url": docs_url,
+        "summary": f"A working {provider} API key discovered by NIGHTSCAN. Status: {row['status']}.",
+        "auth_method": auth_method,
+        "source_url": docs_url,
+    }
+
+    try:
+        with db() as con:
+            con.execute(
+                """INSERT OR IGNORE INTO api_library
+                (name,provider,category,base_url,docs_url,summary,
+                 auth_method,source_url,submitted_by,created_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    entry["name"], entry["provider"], entry["category"],
+                    entry["base_url"], entry["docs_url"], entry["summary"],
+                    entry["auth_method"], entry["source_url"],
+                    user["email"], utc_now(),
+                ),
+            )
+            lib_row = con.execute(
+                "SELECT id FROM api_library WHERE name=? AND base_url=?",
+                (entry["name"], entry["base_url"]),
+            ).fetchone()
+        return jsonify({
+            "ok": True,
+            "library_id": lib_row["id"] if lib_row else None,
+            "library_count": library_count(),
+        })
+    except Exception:
+        app.logger.exception("API Library share failed")
+        return json_error("Could not share this key. Check the database connection.", 500)
 
 
 # ---------------------------------------------------------------------
@@ -1258,8 +1425,11 @@ def index():
 def health():
     with db() as con:
         keys_total = con.execute("SELECT COUNT(*) AS c FROM api_keys").fetchone()["c"]
-        keys_valid = con.execute(
-            "SELECT COUNT(*) AS c FROM api_keys WHERE validated=1"
+        keys_live = con.execute(
+            "SELECT COUNT(*) AS c FROM api_keys WHERE status='live'"
+        ).fetchone()["c"]
+        keys_limited = con.execute(
+            "SELECT COUNT(*) AS c FROM api_keys WHERE status='limited'"
         ).fetchone()["c"]
 
     return jsonify({
@@ -1270,7 +1440,8 @@ def health():
         "database": "PostgreSQL" if DATABASE_URL else "SQLite (local only)",
         "library_count": library_count(),
         "keys_total": keys_total,
-        "keys_validated": keys_valid,
+        "keys_live": keys_live,
+        "keys_limited": keys_limited,
     })
 
 
