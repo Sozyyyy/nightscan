@@ -1,0 +1,32 @@
+NIGHTSCAN — QUICK VERCEL DEPLOY
+
+1) Extract the ZIP.
+2) Upload the CONTENTS of this folder into the ROOT of a GitHub repository.
+   Keep server.py, index.html, requirements.txt and vercel.json at the repo root.
+3) Create a hosted PostgreSQL database (Neon or Supabase are examples).
+4) Import the GitHub repository at https://vercel.com/new.
+5) In Vercel > Project > Settings > Environment Variables, add:
+
+   NIGHTSCAN_SECRET_KEY = a long random secret
+   DATABASE_URL = your PostgreSQL connection string (SSL enabled)
+
+   Generate a secret using:
+   python -c "import secrets; print(secrets.token_urlsafe(48))"
+
+6) Optional Google sign-in:
+   GOOGLE_CLIENT_ID
+   GOOGLE_CLIENT_SECRET
+   GOOGLE_REDIRECT_URI=https://YOUR-PROJECT.vercel.app/auth/google/callback
+   Add that exact callback URL to Google OAuth settings.
+
+7) Optional search-provider upgrade:
+   TAVILY_API_KEY
+   If omitted, the app uses its DuckDuckGo search fallback.
+
+8) Redeploy after adding environment variables.
+9) Open your Vercel URL. Visitors need only their own LLM API key to use discovery.
+
+The visitor's LLM key is not a Vercel environment variable and should never be committed to GitHub.
+The central PostgreSQL database is what makes the API Library global and persistent.
+
+More detail: see README.md.
