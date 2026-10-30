@@ -4,10 +4,12 @@ from __future__ import annotations
 import hashlib
 import html
 import json
+import logging
 import os
 import re
 import secrets
 import sqlite3
+import traceback
 from contextlib import contextmanager
 import time
 from datetime import datetime, timezone
@@ -25,6 +27,11 @@ try:
     from authlib.integrations.flask_client import OAuth
 except ImportError:
     OAuth = None
+
+
+# ---------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
@@ -62,7 +69,9 @@ app.config.update(
     SECRET_KEY=_configured_secret,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=(os.environ.get("NIGHTSCAN_HTTPS", "0") == "1" or IS_VERCEL),
+    SESSION_COOKIE_SECURE=(
+        os.environ.get("NIGHTSCAN_HTTPS", "0") == "1" or IS_VERCEL
+    ),
     PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 7,
     MAX_CONTENT_LENGTH=256 * 1024,
 )
@@ -71,6 +80,12 @@ TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "").strip()
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
 
+logging.basicConfig(level=logging.INFO)
+
+
+# ---------------------------------------------------------------------
+# LLM providers
+# ---------------------------------------------------------------------
 
 LLM_PROVIDERS: dict[str, dict[str, Any]] = {
     "openai": {
@@ -116,6 +131,10 @@ LLM_PROVIDERS: dict[str, dict[str, Any]] = {
 }
 
 
+# ---------------------------------------------------------------------
+# Secret filtering
+# ---------------------------------------------------------------------
+
 SECRET_PATTERNS = [
     re.compile(r"\bsk-(?:proj-|svcacct-|ant-|or-v1-)?[A-Za-z0-9_-]{20,}\b"),
     re.compile(r"\bAIza[0-9A-Za-z_-]{30,}\b"),
@@ -123,6 +142,30 @@ SECRET_PATTERNS = [
     re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b"),
 ]
 
+
+def redact(text: str) -> str:
+    result = str(text)
+
+    for pattern in SECRET_PATTERNS:
+        result = pattern.sub("[REDACTED_SECRET-LIKE_VALUE]", result)
+
+    return result
+
+
+def safe_text(value: Any, max_len: int = 600) -> str:
+    if not isinstance(value, str):
+        return ""
+
+    return re.sub(
+        r"[\x00-\x08\x0b\x0c\x0e-\x1f]",
+        "",
+        value,
+    ).strip()[:max_len]
+
+
+# ---------------------------------------------------------------------
+# Default API Library entries
+# ---------------------------------------------------------------------
 
 DEFAULT_APIS = [
     {
@@ -188,9 +231,53 @@ DEFAULT_APIS = [
 ]
 
 
+# ---------------------------------------------------------------------
+# General helpers
+# ---------------------------------------------------------------------
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
+
+def valid_public_url(value: str) -> bool:
+    try:
+        parsed = urlparse(value)
+
+        return (
+            parsed.scheme == "https"
+            and bool(parsed.netloc)
+            and not parsed.username
+            and not parsed.password
+        )
+    except Exception:
+        return False
+
+
+def json_error(message: str, status: int = 400):
+    return jsonify({"error": message}), status
+
+
+def csrf_token() -> str:
+    token = session.get("csrf")
+
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["csrf"] = token
+
+    return token
+
+
+def client_ip() -> str:
+    forwarded = request.headers.get(
+        "x-forwarded-for", ""
+    ).split(",", 1)[0].strip()
+
+    return (forwarded or request.remote_addr or "unknown")[:64]
+
+
+# ---------------------------------------------------------------------
+# Database adapters
+# ---------------------------------------------------------------------
 
 class _HybridRow(dict):
     """PostgreSQL row supporting both row['column'] and row[0]."""
@@ -198,6 +285,7 @@ class _HybridRow(dict):
     def __getitem__(self, key):
         if isinstance(key, int):
             return list(self.values())[key]
+
         return super().__getitem__(key)
 
 
@@ -222,12 +310,14 @@ class _PgConnection:
 
     def execute(self, sql, params=()):
         ignore = "INSERT OR IGNORE INTO" in sql.upper()
+
         sql = re.sub(
             r"INSERT\s+OR\s+IGNORE\s+INTO",
             "INSERT INTO",
             sql,
             flags=re.I,
         )
+
         sql = sql.replace("?", "%s")
 
         if ignore:
@@ -235,6 +325,7 @@ class _PgConnection:
 
         cursor = self._connection.cursor()
         cursor.execute(sql, params)
+
         return _PgCursor(cursor)
 
 
@@ -282,16 +373,15 @@ def db():
         connection.close()
 
 
+# ---------------------------------------------------------------------
+# Database initialization
+# ---------------------------------------------------------------------
+
 def init_db() -> None:
     with db() as con:
         if DATABASE_URL:
-            # IMPORTANT:
-            # Vercel may start multiple serverless instances simultaneously.
-            # This transaction-level advisory lock ensures only one instance
-            # initializes the PostgreSQL schema at a time.
-            #
-            # It is automatically released when this db() transaction commits
-            # or rolls back. It does not delete or reset existing data.
+            # Serialize PostgreSQL schema initialization across Vercel instances.
+            # This transaction-level lock is automatically released on commit.
             con.execute("SELECT pg_advisory_xact_lock(1314077518)")
 
             statements = [
@@ -330,40 +420,40 @@ def init_db() -> None:
 
         else:
             con.executescript("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT NOT NULL UNIQUE COLLATE NOCASE,
-                password_hash TEXT,
-                google_sub TEXT UNIQUE,
-                created_at TEXT NOT NULL
-            );
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                    password_hash TEXT,
+                    google_sub TEXT UNIQUE,
+                    created_at TEXT NOT NULL
+                );
 
-            CREATE TABLE IF NOT EXISTS api_library (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                provider TEXT NOT NULL,
-                category TEXT NOT NULL,
-                base_url TEXT NOT NULL,
-                docs_url TEXT NOT NULL,
-                summary TEXT NOT NULL,
-                auth_method TEXT NOT NULL,
-                source_url TEXT NOT NULL,
-                submitted_by TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                UNIQUE(name, base_url)
-            );
+                CREATE TABLE IF NOT EXISTS api_library (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    provider TEXT NOT NULL,
+                    category TEXT NOT NULL,
+                    base_url TEXT NOT NULL,
+                    docs_url TEXT NOT NULL,
+                    summary TEXT NOT NULL,
+                    auth_method TEXT NOT NULL,
+                    source_url TEXT NOT NULL,
+                    submitted_by TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    UNIQUE(name, base_url)
+                );
 
-            CREATE TABLE IF NOT EXISTS rate_events (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                bucket TEXT NOT NULL,
-                ts INTEGER NOT NULL
-            );
+                CREATE TABLE IF NOT EXISTS rate_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    bucket TEXT NOT NULL,
+                    ts INTEGER NOT NULL
+                );
 
-            CREATE INDEX IF NOT EXISTS idx_library_created
-                ON api_library(created_at DESC);
+                CREATE INDEX IF NOT EXISTS idx_library_created
+                    ON api_library(created_at DESC);
 
-            CREATE INDEX IF NOT EXISTS idx_rate
-                ON rate_events(bucket, ts);
+                CREATE INDEX IF NOT EXISTS idx_rate
+                    ON rate_events(bucket, ts);
             """)
 
         count = con.execute(
@@ -392,17 +482,13 @@ def init_db() -> None:
                 )
 
 
-# Initialize the schema safely. PostgreSQL startup is serialized above.
+# Initialize the schema when the application starts.
 init_db()
 
 
-def client_ip() -> str:
-    forwarded = request.headers.get(
-        "x-forwarded-for", ""
-    ).split(",", 1)[0].strip()
-
-    return (forwarded or request.remote_addr or "unknown")[:64]
-
+# ---------------------------------------------------------------------
+# Rate limiting
+# ---------------------------------------------------------------------
 
 def rate_limited(bucket: str, limit: int = 12, window: int = 60) -> bool:
     now = int(time.time())
@@ -429,53 +515,9 @@ def rate_limited(bucket: str, limit: int = 12, window: int = 60) -> bool:
     return False
 
 
-def safe_text(value: Any, max_len: int = 600) -> str:
-    if not isinstance(value, str):
-        return ""
-
-    return re.sub(
-        r"[\x00-\x08\x0b\x0c\x0e-\x1f]",
-        "",
-        value,
-    ).strip()[:max_len]
-
-
-def redact(text: str) -> str:
-    result = text
-
-    for pattern in SECRET_PATTERNS:
-        result = pattern.sub("[REDACTED_SECRET-LIKE_VALUE]", result)
-
-    return result
-
-
-def valid_public_url(value: str) -> bool:
-    try:
-        parsed = urlparse(value)
-
-        return (
-            parsed.scheme == "https"
-            and bool(parsed.netloc)
-            and not parsed.username
-            and not parsed.password
-        )
-    except Exception:
-        return False
-
-
-def json_error(message: str, status: int = 400):
-    return jsonify({"error": message}), status
-
-
-def csrf_token() -> str:
-    token = session.get("csrf")
-
-    if not token:
-        token = secrets.token_urlsafe(32)
-        session["csrf"] = token
-
-    return token
-
+# ---------------------------------------------------------------------
+# Flask security
+# ---------------------------------------------------------------------
 
 @app.after_request
 def add_security_headers(response):
@@ -511,6 +553,10 @@ def protect_mutations():
                 403,
             )
 
+
+# ---------------------------------------------------------------------
+# Authentication
+# ---------------------------------------------------------------------
 
 def hash_password(password: str, salt: bytes | None = None) -> str:
     salt = salt or secrets.token_bytes(16)
@@ -779,6 +825,7 @@ def get_models(provider: str, api_key: str) -> list[str]:
             {"Authorization": f"Bearer {api_key}"},
             timeout=20,
         )
+
         ids = [
             item.get("id")
             for item in data.get("data", [])
@@ -794,6 +841,7 @@ def get_models(provider: str, api_key: str) -> list[str]:
             },
             timeout=20,
         )
+
         ids = [
             item.get("id")
             for item in data.get("data", [])
@@ -806,6 +854,7 @@ def get_models(provider: str, api_key: str) -> list[str]:
             {"x-goog-api-key": api_key},
             timeout=20,
         )
+
         ids = [
             item.get("name", "").replace("models/", "")
             for item in data.get("models", [])
@@ -972,7 +1021,7 @@ def llm_extract(
 
 
 # ---------------------------------------------------------------------
-# Pages and API routes
+# Pages and basic API routes
 # ---------------------------------------------------------------------
 
 @app.get("/")
@@ -1036,9 +1085,6 @@ def models():
     provider = safe_text(data.get("provider"), 30).lower()
     api_key = safe_text(data.get("api_key"), 500)
 
-    if len(api_key) > 500:
-        return json_error("API key is too long.")
-
     if provider not in LLM_PROVIDERS or not api_key:
         return json_error("Choose an LLM provider and enter its API key.")
 
@@ -1047,6 +1093,12 @@ def models():
         return jsonify({"models": items, "source": "provider API"})
 
     except HTTPError as exc:
+        app.logger.warning(
+            "Model-list upstream HTTP failure (provider=%s, status=%s)",
+            provider,
+            exc.code,
+        )
+
         return json_error(
             f"Provider rejected the model-list request (HTTP {exc.code}). "
             "Check the key and provider.",
@@ -1054,65 +1106,121 @@ def models():
         )
 
     except (URLError, TimeoutError):
+        app.logger.exception(
+            "Model-list connection failure (provider=%s)",
+            provider,
+        )
+
         return json_error(
             "Could not reach the provider model endpoint. Check your connection and try again.",
             502,
         )
 
-    except Exception:
-        app.logger.exception("Model-list request failed")
+    except Exception as exc:
+        app.logger.exception(
+            "Model-list request failed (provider=%s, exception_type=%s)",
+            provider,
+            type(exc).__name__,
+        )
+
         return json_error(
             "Could not load models. Use one of the suggested models or check provider compatibility.",
             502,
         )
 
 
+# ---------------------------------------------------------------------
+# Discovery diagnostics
+# ---------------------------------------------------------------------
+
 @app.post("/api/discover")
 def discover():
-    if rate_limited(f"discover:{client_ip()}", 8, 60):
-        return json_error(
-            "Too many discovery requests. Please wait a minute.",
-            429,
-        )
-
-    data = request.get_json(silent=True) or {}
-
-    provider = safe_text(data.get("provider"), 30).lower()
-    model = safe_text(data.get("model"), 150)
-    api_key = safe_text(data.get("api_key"), 500)
-    query = safe_text(data.get("query"), 240)
-
-    if provider not in LLM_PROVIDERS or not model or not api_key:
-        return json_error(
-            "Select an LLM provider and model, then enter its API key."
-        )
-
-    if len(query) < 4:
-        return json_error(
-            "Enter a topic to discover, such as 'AI image generation APIs'."
-        )
-
-    if re.search(
-        r"\b(api[_ -]?keys?|credentials?|access[_ -]?tokens?|secrets?|"
-        r"leaks?|exposed|harvest|dumps?|steal)\b",
-        query,
-        re.I,
-    ):
-        return json_error(
-            "This discovery tool is for public API products and documentation, "
-            "not locating exposed credentials.",
-            400,
-        )
+    scan_id = secrets.token_hex(6)
+    stage = "rate_limit"
 
     try:
+        if rate_limited(f"discover:{client_ip()}", 8, 60):
+            app.logger.warning(
+                "Discovery rate limited (scan_id=%s)",
+                scan_id,
+            )
+
+            return jsonify({
+                "ok": False,
+                "error": "Too many discovery requests. Please wait a minute.",
+                "scan_id": scan_id,
+                "stage": stage,
+                "error_type": "RateLimited",
+            }), 429
+
+        stage = "input_validation"
+        data = request.get_json(silent=True) or {}
+
+        provider = safe_text(data.get("provider"), 30).lower()
+        model = safe_text(data.get("model"), 150)
+        api_key = safe_text(data.get("api_key"), 500)
+        query = safe_text(data.get("query"), 240)
+
+        if provider not in LLM_PROVIDERS or not model or not api_key:
+            return json_error(
+                "Select an LLM provider and model, then enter its API key."
+            )
+
+        if len(query) < 4:
+            return json_error(
+                "Enter a topic to discover, such as 'AI image generation APIs'."
+            )
+
+        if re.search(
+            r"\b(api[_ -]?keys?|credentials?|access[_ -]?tokens?|secrets?|"
+            r"leaks?|exposed|harvest|dumps?|steal)\b",
+            query,
+            re.I,
+        ):
+            return json_error(
+                "This discovery tool is for public API products and documentation, "
+                "not locating exposed credentials.",
+                400,
+            )
+
+        app.logger.info(
+            "Discovery started (scan_id=%s, provider=%s, model=%s)",
+            scan_id,
+            provider,
+            model,
+        )
+
+        stage = "public_web_search"
+
         search_results = public_web_search(query)
 
+        app.logger.info(
+            "Discovery search completed (scan_id=%s, results=%s, provider=%s)",
+            scan_id,
+            len(search_results),
+            "Tavily" if TAVILY_API_KEY else "DuckDuckGo",
+        )
+
         if not search_results:
-            return json_error(
-                "The public search engine returned no useful results. "
-                "Try a broader topic.",
-                502,
+            app.logger.warning(
+                "Discovery returned empty search results "
+                "(scan_id=%s, search_provider=%s)",
+                scan_id,
+                "Tavily" if TAVILY_API_KEY else "DuckDuckGo",
             )
+
+            return jsonify({
+                "ok": False,
+                "error": (
+                    "The public search provider returned no usable results. "
+                    "It may be blocking automated requests or returning an unsupported page."
+                ),
+                "stage": stage,
+                "scan_id": scan_id,
+                "error_type": "EmptySearchResults",
+            }), 502
+
+        stage = "llm_extraction"
 
         apis = llm_extract(
             provider,
@@ -1122,11 +1230,18 @@ def discover():
             search_results,
         )
 
+        app.logger.info(
+            "Discovery extraction completed (scan_id=%s, extracted=%s)",
+            scan_id,
+            len(apis),
+        )
+
         return jsonify({
             "ok": True,
             "query": query,
             "search_count": len(search_results),
             "apis": apis,
+            "scan_id": scan_id,
             "note": (
                 "Public web search results are an index sample, "
                 "not an exhaustive crawl of every page on the internet."
@@ -1134,35 +1249,89 @@ def discover():
         })
 
     except HTTPError as exc:
-        return json_error(
-            f"An upstream service returned HTTP {exc.code}. "
-            "Check the search and LLM configuration.",
-            502,
+        app.logger.exception(
+            "Discovery upstream HTTP failure "
+            "(scan_id=%s, stage=%s, status=%s)",
+            scan_id,
+            stage,
+            exc.code,
         )
 
-    except (URLError, TimeoutError):
-        return json_error(
-            "Could not reach the public search service or selected LLM provider. "
-            "Check internet access.",
-            502,
+        return jsonify({
+            "ok": False,
+            "error": "An upstream service rejected the discovery request.",
+            "stage": stage,
+            "scan_id": scan_id,
+            "error_type": "UpstreamHTTPError",
+            "upstream_status": exc.code,
+        }), 502
+
+    except URLError:
+        app.logger.exception(
+            "Discovery network failure (scan_id=%s, stage=%s)",
+            scan_id,
+            stage,
         )
+
+        return jsonify({
+            "ok": False,
+            "error": "Could not connect to an upstream service.",
+            "stage": stage,
+            "scan_id": scan_id,
+            "error_type": "UpstreamConnectionError",
+        }), 502
+
+    except TimeoutError:
+        app.logger.exception(
+            "Discovery timeout (scan_id=%s, stage=%s)",
+            scan_id,
+            stage,
+        )
+
+        return jsonify({
+            "ok": False,
+            "error": "An upstream service timed out.",
+            "stage": stage,
+            "scan_id": scan_id,
+            "error_type": "TimeoutError",
+        }), 502
 
     except json.JSONDecodeError:
-        return json_error(
-            "The selected model returned an unreadable response. Try another model.",
-            502,
+        app.logger.exception(
+            "Discovery JSON parsing failure (scan_id=%s, stage=%s)",
+            scan_id,
+            stage,
         )
+
+        return jsonify({
+            "ok": False,
+            "error": "The selected model returned an unreadable response.",
+            "stage": stage,
+            "scan_id": scan_id,
+            "error_type": "JSONDecodeError",
+        }), 502
 
     except Exception as exc:
-        app.logger.error(
-            "Discovery failed (exception_type=%s)",
+        app.logger.exception(
+            "Unexpected discovery failure "
+            "(scan_id=%s, stage=%s, exception_type=%s)",
+            scan_id,
+            stage,
             type(exc).__name__,
         )
-        return json_error(
-            "Discovery failed. Check the selected provider, model and API key, then try again.",
-            500,
-        )
 
+        return jsonify({
+            "ok": False,
+            "error": "An unexpected discovery error occurred.",
+            "stage": stage,
+            "scan_id": scan_id,
+            "error_type": type(exc).__name__,
+        }), 500
+
+
+# ---------------------------------------------------------------------
+# Shared API Library
+# ---------------------------------------------------------------------
 
 def clean_library_item(data: dict[str, Any]) -> dict[str, str] | None:
     forbidden = {
@@ -1298,11 +1467,16 @@ def add_library_item():
 
     except Exception:
         app.logger.exception("API Library write failed")
+
         return json_error(
             "Could not save this API entry. Check the database connection.",
             500,
         )
 
+
+# ---------------------------------------------------------------------
+# Account registration
+# ---------------------------------------------------------------------
 
 @app.post("/api/auth/signup")
 def signup():
@@ -1336,6 +1510,7 @@ def signup():
                 VALUES(?,?,?) RETURNING id""",
                 (email, hash_password(password), utc_now()),
             )
+
             uid = cursor.fetchone()["id"]
 
         session.clear()
@@ -1357,11 +1532,16 @@ def signup():
             )
 
         app.logger.exception("Signup failed")
+
         return json_error(
             "Could not create the account. Check the database configuration.",
             500,
         )
 
+
+# ---------------------------------------------------------------------
+# Account login
+# ---------------------------------------------------------------------
 
 @app.post("/api/auth/login")
 def login():
@@ -1401,6 +1581,10 @@ def login():
         "csrf": session["csrf"],
     })
 
+
+# ---------------------------------------------------------------------
+# Account logout
+# ---------------------------------------------------------------------
 
 @app.post("/api/auth/logout")
 def logout():
@@ -1457,6 +1641,7 @@ if OAuth and GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
                     "WHERE id=? AND google_sub IS NULL",
                     (sub, row["id"]),
                 )
+
                 uid = row["id"]
 
             else:
@@ -1465,6 +1650,7 @@ if OAuth and GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
                     VALUES(?,?,?) RETURNING id""",
                     (email, sub, utc_now()),
                 )
+
                 uid = cursor.fetchone()["id"]
 
         session.clear()
@@ -1482,6 +1668,10 @@ else:
             501,
         )
 
+
+# ---------------------------------------------------------------------
+# Local development server
+# ---------------------------------------------------------------------
 
 if __name__ == "__main__":
     host = os.environ.get("NIGHTSCAN_HOST", "127.0.0.1")
