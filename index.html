@@ -62,11 +62,7 @@ html[data-theme="light"] {
 
 * { box-sizing: border-box; }
 
-html {
-    min-height: 100%;
-    background: var(--bg);
-    scrollbar-gutter: stable;
-}
+html { min-height: 100%; background: var(--bg); scrollbar-gutter: stable; }
 
 body {
     min-height: 100vh;
@@ -88,11 +84,7 @@ button:disabled { cursor: not-allowed; }
 a { color: var(--accent-strong); text-decoration: none; transition: color var(--motion-fast) ease; }
 a:hover { color: var(--text); }
 
-.layout {
-    display: grid;
-    grid-template-columns: 252px minmax(0, 1fr);
-    min-height: 100vh;
-}
+.layout { display: grid; grid-template-columns: 252px minmax(0, 1fr); min-height: 100vh; }
 
 .sidebar {
     position: sticky;
@@ -109,40 +101,16 @@ a:hover { color: var(--text); }
 }
 
 .main { min-width: 0; }
-
-.workspace {
-    width: min(1280px, 100%);
-    margin: 0 auto;
-    padding: 43px clamp(24px, 4vw, 58px) 26px;
-}
+.workspace { width: min(1280px, 100%); margin: 0 auto; padding: 43px clamp(24px, 4vw, 58px) 26px; }
 
 .brand { display: flex; align-items: center; gap: 12px; padding: 2px 8px 42px; }
-
-.brand-icon {
-    display: grid;
-    width: 39px;
-    height: 39px;
-    place-items: center;
-    color: var(--accent-strong);
-    background: var(--accent-soft);
-    border: 1px solid var(--accent-border);
-    border-radius: 11px;
-}
+.brand-icon { display: grid; width: 39px; height: 39px; place-items: center; color: var(--accent-strong); background: var(--accent-soft); border: 1px solid var(--accent-border); border-radius: 11px; }
 .brand-icon svg { width: 21px; height: 21px; }
-
 .brand-name { color: var(--text); font-size: 15px; font-weight: 800; letter-spacing: 0.19em; }
 .brand-name span { color: var(--accent-strong); }
 .brand-sub { margin-top: 6px; color: var(--faint); font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; }
 
-.nav-label {
-    margin: 0 0 12px;
-    padding: 0 10px;
-    color: var(--faint);
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 0.17em;
-}
-
+.nav-label { margin: 0 0 12px; padding: 0 10px; color: var(--faint); font-size: 9px; font-weight: 800; letter-spacing: 0.17em; }
 .nav { display: grid; gap: 5px; }
 
 .nav-btn {
@@ -171,16 +139,7 @@ a:hover { color: var(--text); }
 .side-bottom { margin-top: auto; padding-top: 28px; }
 .server-card { padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); }
 .server-title { display: flex; align-items: center; gap: 9px; color: var(--text); font-size: 10px; font-weight: 800; letter-spacing: 0.08em; }
-
-.green-dot {
-    width: 7px;
-    height: 7px;
-    flex: 0 0 auto;
-    background: var(--good);
-    border-radius: 50%;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--good) 12%, transparent);
-}
-
+.green-dot { width: 7px; height: 7px; flex: 0 0 auto; background: var(--good); border-radius: 50%; box-shadow: 0 0 0 4px color-mix(in srgb, var(--good) 12%, transparent); }
 .server-copy { margin-top: 9px; color: var(--muted); font-size: 10px; line-height: 1.7; }
 .side-version { padding: 17px 9px 0; color: var(--faint); font-family: var(--mono); font-size: 9px; letter-spacing: 0.09em; }
 
@@ -197,13 +156,10 @@ a:hover { color: var(--text); }
     background: color-mix(in srgb, var(--bg) 94%, transparent);
     border-bottom: 1px solid var(--line);
 }
-
 .topbar-left, .top-right { display: flex; align-items: center; }
 .top-right { gap: 14px; }
-
 .crumb { color: var(--muted); font-size: 11px; letter-spacing: 0.02em; }
 .crumb b { color: var(--text); font-weight: 700; }
-
 .connection { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: 0.1em; }
 .connection .green-dot { width: 6px; height: 6px; }
 
@@ -218,32 +174,9 @@ a:hover { color: var(--text); }
     border: 1px solid var(--line-strong);
     border-radius: 999px;
 }
-
-.theme-thumb {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 32px;
-    height: 28px;
-    background: var(--accent);
-    border-radius: 999px;
-    transition: transform var(--motion-base) var(--ease);
-}
+.theme-thumb { position: absolute; top: 3px; left: 3px; width: 32px; height: 28px; background: var(--accent); border-radius: 999px; transition: transform var(--motion-base) var(--ease); }
 .theme-switch[data-theme="light"] .theme-thumb { transform: translateX(36px); }
-
-.theme-choice {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    width: 34px;
-    height: 28px;
-    place-items: center;
-    padding: 0;
-    color: var(--muted);
-    background: transparent;
-    border: 0;
-    border-radius: 999px;
-}
+.theme-choice { position: relative; z-index: 1; display: grid; width: 34px; height: 28px; place-items: center; padding: 0; color: var(--muted); background: transparent; border: 0; border-radius: 999px; }
 .theme-choice svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
 .theme-choice[aria-pressed="true"] { color: #15130f; }
 
@@ -280,20 +213,10 @@ a:hover { color: var(--text); }
 }
 .account-btn:hover { color: var(--accent-strong); background: var(--surface-raised); border-color: var(--accent-border); }
 
-.mobile-menu {
-    display: none;
-    width: 36px;
-    height: 36px;
-    margin-right: 12px;
-    color: var(--text);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-}
+.mobile-menu { display: none; width: 36px; height: 36px; margin-right: 12px; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); }
 
 .page { display: none; opacity: 0; }
 .page.active { display: block; animation: page-arrive 150ms ease-out both; }
-
 @keyframes page-arrive { from { opacity: 0.72; } to { opacity: 1; } }
 
 .eyebrow { display: flex; align-items: center; gap: 10px; color: var(--accent); font-size: 9px; font-weight: 800; letter-spacing: 0.19em; }
@@ -388,27 +311,9 @@ a:hover { color: var(--text); }
 .reveal:hover { color: var(--accent-strong); }
 .query-box { min-height: 94px; resize: vertical; line-height: 1.65; }
 
-.primary, .secondary, .mini-btn, .google-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    border-radius: var(--radius-sm);
-    font-weight: 800;
-    transition: color var(--motion-fast) ease, background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
-}
+.primary, .secondary, .mini-btn, .google-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: var(--radius-sm); font-weight: 800; transition: color var(--motion-fast) ease, background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease; }
 
-.primary {
-    width: 100%;
-    min-height: 45px;
-    padding: 0 17px;
-    color: #17140e;
-    background: var(--accent-strong);
-    border: 1px solid var(--accent-strong);
-    box-shadow: 0 5px 18px rgba(199, 170, 117, 0.1);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-}
+.primary { width: 100%; min-height: 45px; padding: 0 17px; color: #17140e; background: var(--accent-strong); border: 1px solid var(--accent-strong); box-shadow: 0 5px 18px rgba(199, 170, 117, 0.1); font-size: 10px; letter-spacing: 0.1em; }
 .primary:hover { background: #ead5aa; border-color: #ead5aa; box-shadow: 0 7px 22px rgba(199, 170, 117, 0.16); }
 .primary:active { background: var(--accent); box-shadow: none; }
 .primary:disabled { color: var(--faint); background: var(--surface-soft); border-color: var(--line); box-shadow: none; opacity: 0.75; }
@@ -445,34 +350,11 @@ a:hover { color: var(--text); }
 .api-result p, .library-entry p { margin: 11px 0; color: var(--muted); font-size: 10px; line-height: 1.75; }
 .api-meta { display: grid; gap: 5px; color: var(--faint); font-family: var(--mono); font-size: 9px; line-height: 1.65; overflow-wrap: anywhere; }
 .api-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
-.api-actions a, .api-actions button {
-    display: inline-flex;
-    align-items: center;
-    min-height: 30px;
-    padding: 0 9px;
-    color: var(--accent-strong);
-    background: var(--accent-soft);
-    border: 1px solid var(--accent-border);
-    border-radius: 5px;
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 0.03em;
-}
+.api-actions a, .api-actions button { display: inline-flex; align-items: center; min-height: 30px; padding: 0 9px; color: var(--accent-strong); background: var(--accent-soft); border: 1px solid var(--accent-border); border-radius: 5px; font-size: 9px; font-weight: 800; letter-spacing: 0.03em; }
 .api-actions a:hover, .api-actions button:hover { color: var(--text); background: var(--surface-soft); border-color: var(--line-strong); }
 .api-actions button:disabled { color: var(--muted); cursor: wait; opacity: 0.7; }
 
-.saved-state {
-    display: inline-flex;
-    align-items: center;
-    min-height: 30px;
-    padding: 0 9px;
-    color: var(--good);
-    background: color-mix(in srgb, var(--good) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--good) 32%, transparent);
-    border-radius: 5px;
-    font-family: var(--mono);
-    font-size: 9px;
-}
+.saved-state { display: inline-flex; align-items: center; min-height: 30px; padding: 0 9px; color: var(--good); background: color-mix(in srgb, var(--good) 10%, transparent); border: 1px solid color-mix(in srgb, var(--good) 32%, transparent); border-radius: 5px; font-family: var(--mono); font-size: 9px; }
 
 .library-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
 .search { width: 100%; min-width: 0; min-height: 43px; padding: 0 14px; color: var(--text); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); font-size: 11px; outline: none; transition: border-color var(--motion-fast) ease, background-color var(--motion-fast) ease; }
@@ -512,7 +394,8 @@ a:hover { color: var(--text); }
 .modal-link { padding: 0; color: var(--accent-strong); background: transparent; border: 0; font-size: 10px; font-weight: 800; }
 .modal-foot span { color: var(--faint); font-size: 9px; }
 
-html[data-theme="light"] body { background: radial-gradient(ellipse at 78% -18%, rgba(143, 109, 54, 0.08), transparent 39%), var(--bg); }
+html[data-theme="light"] body { background: radial-gradient
+(ellipse at 78% -18%, rgba(143, 109, 54, 0.08), transparent 39%), var(--bg); }
 html[data-theme="light"] .theme-choice[aria-pressed="true"] { color: #fff; }
 html[data-theme="light"] .primary { color: #fff; background: #8f6d36; border-color: #8f6d36; }
 html[data-theme="light"] .primary:hover { color: #fff; background: #77582b; border-color: #77582b; }
@@ -593,6 +476,115 @@ html[data-theme="light"] .api-actions button {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
     }
+}
+
+/* CONFETTI POPUP */
+.confetti-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: none;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+}
+.confetti-overlay.show { display: grid; animation: confettiFade 240ms ease-out both; }
+@keyframes confettiFade { from { opacity: 0; } to { opacity: 1; } }
+
+#confettiCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.confetti-card {
+    position: relative;
+    z-index: 1;
+    width: min(520px, 92vw);
+    padding: 30px 26px;
+    background: var(--surface-raised);
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 100px rgba(199, 170, 117, 0.28), 0 0 0 1px var(--accent-soft);
+    text-align: center;
+    animation: confettiPop 420ms cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+@keyframes confettiPop {
+    from { opacity: 0; transform: scale(0.88) translateY(20px); }
+    to { opacity: 1; transform: none; }
+}
+
+.confetti-card .confetti-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    margin-bottom: 16px;
+    color: var(--good);
+    background: color-mix(in srgb, var(--good) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--good) 40%, transparent);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+.confetti-card h2 {
+    margin: 0 0 8px;
+    color: var(--text);
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+}
+.confetti-card .confetti-sub {
+    margin: 0 0 20px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.6;
+}
+.confetti-provider {
+    display: inline-block;
+    padding: 4px 10px;
+    margin-bottom: 14px;
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-border);
+    border-radius: 5px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.confetti-key {
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    background: var(--surface-field);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    color: var(--accent-strong);
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.5;
+    word-break: break-all;
+    user-select: all;
+    text-align: left;
+}
+.confetti-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.confetti-actions .primary, .confetti-actions .secondary {
+    min-height: 44px;
+    font-size: 10px;
+}
+@media (max-width: 520px) {
+    .confetti-actions { grid-template-columns: 1fr; }
+    .confetti-card h2 { font-size: 22px; }
 }
   </style>
  </head>
@@ -981,6 +973,20 @@ html[data-theme="light"] .api-actions button {
     </div>
    </div>
   </div>
+  <div class="confetti-overlay" id="confettiOverlay">
+   <canvas id="confettiCanvas"></canvas>
+   <div class="confetti-card">
+    <div class="confetti-eyebrow">✓ LIVE KEY FOUND</div>
+    <h2>IT WORKS.</h2>
+    <p class="confetti-sub">Provider accepted a real inference request. This key has quota right now.</p>
+    <div class="confetti-provider" id="confettiProvider">UNKNOWN</div>
+    <div class="confetti-key" id="confettiKey"></div>
+    <div class="confetti-actions">
+     <button class="primary" id="confettiCopy" type="button">⧉ COPY KEY</button>
+     <button class="secondary" id="confettiClose" type="button">CLOSE</button>
+    </div>
+   </div>
+  </div>
   <script>
    (()=>{
 'use strict';
@@ -1003,54 +1009,171 @@ const providerDefaults={openai:['gpt-4.1-mini','gpt-4.1','gpt-4o-mini'],anthropi
 function setStatus(id,text,type=''){const el=$(id);el.textContent=text;el.className='status-line show '+type;}
 function hideStatus(id){$(id).className='status-line';$(id).textContent='';}
 async function api(path,options={}){const headers={...(options.headers||{})};if(options.body){headers['Content-Type']='application/json';headers['X-CSRF-Token']=csrf;}const res=await fetch(path,{...options,headers,credentials:'same-origin'});let data={};try{data=await res.json();}catch{}if(!res.ok)throw new Error(data.error||('Request failed ('+res.status+')'));return data;}
-initTheme();$('darkModeBtn').addEventListener('click',()=>setTheme('dark'));$('lightModeBtn').addEventListener('click',()=>setTheme('light'));$('soundToggle').addEventListener('click',()=>{soundEnabled=!soundEnabled;$('soundToggle').setAttribute('aria-pressed',String(soundEnabled));$('soundToggle').setAttribute('aria-label',soundEnabled?'Mute interface sounds':'Enable interface sounds');$('soundToggle').title=soundEnabled?'Mute interface sounds':'Enable interface sounds';$('soundToggle').style.opacity=soundEnabled?'1':'.48';if(soundEnabled)playUiSound('toggle');});document.addEventListener('click',e=>{const target=e.target.closest('button,a');if(target&&!target.disabled&&target.id!=='soundToggle'&&target.id!=='darkModeBtn'&&target.id!=='lightModeBtn')playUiSound('tap');});
+initTheme();$('darkModeBtn').addEventListener('click',()=>setTheme('dark'));$('lightModeBtn').addEventListener('click',()=>setTheme('light'));$('soundToggle').addEventListener('click',()=>{soundEnabled=!soundEnabled;$('soundToggle').setAttribute('aria-pressed',String(soundEnabled));$('soundToggle').setAttribute('aria-label',soundEnabled?'
+Mute interface sounds':'Enable interface sounds');$('soundToggle').title=soundEnabled?'Mute interface sounds':'Enable interface sounds';$('soundToggle').style.opacity=soundEnabled?'1':'.48';if(soundEnabled)playUiSound('toggle');});document.addEventListener('click',e=>{const target=e.target.closest('button,a');if(target&&!target.disabled&&target.id!=='soundToggle'&&target.id!=='darkModeBtn'&&target.id!=='lightModeBtn')playUiSound('tap');});
 function switchPage(name){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$(name+'Page').classList.add('active');document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===name));const titles={home:'Home',scanner:'Scanner',library:'API Library',keys:'Keys'};$('crumbName').textContent=titles[name]||name;$('sidebar').classList.remove('open');if(name==='library')loadLibrary();if(name==='keys')loadKeys();}
 document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>switchPage(b.dataset.page)));$('goScanner').addEventListener('click',()=>switchPage('scanner'));$('mobileMenu').addEventListener('click',()=>$('sidebar').classList.toggle('open'));
 function fillModels(provider,models){const select=$('llmModel');select.replaceChildren();(models&&models.length?models:providerDefaults[provider]||[]).forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;select.append(o);});$('modelSource').textContent=models&&models.length?'PROVIDER MODEL LIST':'SUGGESTED MODELS';}
 $('llmProvider').addEventListener('change',()=>fillModels($('llmProvider').value,providerDefaults[$('llmProvider').value]));
 $('toggleLlmKey').addEventListener('click',()=>{const i=$('llmKey');i.type=i.type==='password'?'text':'password';$('toggleLlmKey').textContent=i.type==='password'?'SHOW':'HIDE';});
 $('loadModels').addEventListener('click',async()=>{const key=$('llmKey').value.trim(),provider=$('llmProvider').value;if(!key){setStatus('scanStatus','Paste your LLM API key first.','error');return;}const btn=$('loadModels');btn.disabled=true;btn.textContent='LOADING…';try{const d=await api('/api/llm/models',{method:'POST',body:JSON.stringify({provider,api_key:key})});fillModels(provider,d.models);setStatus('scanStatus',`Loaded ${d.models.length} models from ${provider}.`,'success');}catch(e){setStatus('scanStatus',e.message,'error');}finally{btn.disabled=false;btn.textContent='LOAD MODELS';}});
-function renderHits(items){const box=$('resultBody');box.replaceChildren();$('resultCount').textContent=items.length+(items.length===1?' KEY':' KEYS');lastResults=items;if(!items.length){const d=document.createElement('div');d.className='empty';d.innerHTML='<div class="empty-icon">⌕</div><strong>No keys found</strong><p>The model ran, but nothing credential-shaped came back. Try a more specific topic, a different provider, or add a Tavily key for better search coverage.</p>';box.append(d);return;}
-items.forEach((item,index)=>{const card=document.createElement('article');card.className='api-result';card.style.setProperty('--i',index);const top=document.createElement('div');top.className='api-result-top';const title=document.createElement('div');const h=document.createElement('h3');h.textContent=(item.provider||'unknown').toUpperCase();const p=document.createElement('div');p.className='provider';p.textContent=item.validated?'● LIVE — provider accepted this key':'○ UNVERIFIED — provider probe rejected or skipped';p.style.color=item.validated?'var(--good)':'var(--muted)';title.append(h,p);top.append(title);const badge=document.createElement('span');badge.className='pill';badge.textContent=item.validated?'VALID':'UNVERIFIED';badge.style.color=item.validated?'var(--good)':'var(--amber)';top.append(badge);const meta=document.createElement('div');meta.className='api-meta';const keyRow=document.createElement('div');keyRow.textContent='KEY  '+item.key;keyRow.style.wordBreak='break-all';keyRow.style.userSelect='all';meta.append(keyRow);const actions=document.createElement('div');actions.className='api-actions';const copy=document.createElement('button');copy.type='button';copy.textContent='⧉ COPY KEY';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(item.key);copy.textContent='✓ COPIED';setTimeout(()=>{copy.textContent='⧉ COPY KEY';},1200);}catch{copy.textContent='COPY FAILED';}});actions.append(copy);card.append(top,meta,actions);box.append(card);});}
-$('discoverBtn').addEventListener('click',async()=>{const provider=$('llmProvider').value,key=$('llmKey').value.trim(),model=$('llmModel').value,query=$('researchQuery').value.trim()||'leaked API keys in public github repos, pastes, and docs';if(!key||!model){setStatus('scanStatus','Choose a model and paste your AI provider API key.','error');return;}const btn=$('discoverBtn');btn.disabled=true;btn.textContent='◌  SEARCHING PUBLIC WEB…';setStatus('scanStatus','Searching public web results and asking '+provider+' to extract keys…');$('resultBody').innerHTML='<div class="empty"><div class="empty-icon">◌</div><strong>Research in progress</strong><p>Searching public results and extracting credential candidates.</p></div>';$('resultCount').textContent='SEARCHING';try{const d=await api('/api/discover',{method:'POST',body:JSON.stringify({provider,model,api_key:key,query})});renderHits(d.hits||[]);const live=(d.hits||[]).filter(h=>h.validated).length;setStatus('scanStatus',`Discovery complete · ${d.hits.length} candidates from ${d.search_count} results · ${live} live. ${d.note||''}`,'success');}catch(e){$('resultBody').innerHTML='<div class="empty"><div class="empty-icon">!</div><strong>Discovery could not complete</strong><p></p></div>';$('resultBody').querySelector('p').textContent=e.message;setStatus('scanStatus',e.message,'error');$('resultCount').textContent='ERROR';}finally{btn.disabled=false;btn.textContent='◈  START DISCOVERY';}});
-function renderLibrary(items){const grid=$('libraryGrid');grid.replaceChildren();if(!items.length){const d=document.createElement('div');d.className='empty-library';d.textContent='No matching API entries yet.';grid.append(d);return;}items.forEach(item=>{const card=document.createElement('article');card.className='library-entry';const top=document.createElement('div');top.className='entry-top';const left=document.createElement('div');const h=document.createElement('h3');h.textContent=item.name;const p=document.createElement('div');p.className='entry-provider';p.textContent=item.provider;left.append(h,p);const cat=document.createElement('span');cat.className='entry-cat';cat.textContent=item.category||'API';top.append(left,cat);const summary=document.createElement('p');summary.textContent=item.summary||'No description available.';const url=document.createElement('a');url.className='entry-url';url.href=item.docs_url;url.target='_blank';url.rel='noopener noreferrer';url.textContent=item.docs_url;const foot=document.createElement('div');foot.className='entry-foot';const who=document.createElement('span');who.textContent='ADDED BY '+(item.submitted_by||'COMMUNITY');const when=document.createElement('span');when.textContent=(item.created_at||'').slice(0,10);foot.append(who,when);card.append(top,summary,url,foot);grid.append(card);});}
+
+// --- CONFETTI ---
+let confettiFrame=null;let confettiParticles=[];
+function fireConfetti(){
+ const canvas=$('confettiCanvas');if(!canvas)return;
+ const ctx=canvas.getContext('2d');
+ const dpr=window.devicePixelRatio||1;
+ canvas.width=window.innerWidth*dpr;canvas.height=window.innerHeight*dpr;
+ ctx.scale(dpr,dpr);
+ const W=window.innerWidth,H=window.innerHeight;
+ const colors=['#c7aa75','#e0c895','#8ab99a','#f2efe7','#745426','#aa98ff'];
+ confettiParticles=[];
+ for(let i=0;i<180;i++){
+  confettiParticles.push({
+   x:W/2+(Math.random()-0.5)*W*0.3,
+   y:H*0.35+(Math.random()-0.5)*80,
+   vx:(Math.random()-0.5)*14,
+   vy:Math.random()*-12-4,
+   size:4+Math.random()*7,
+   color:colors[Math.floor(Math.random()*colors.length)],
+   rot:Math.random()*Math.PI*2,
+   vrot:(Math.random()-0.5)*0.3,
+   life:0,
+   ttl:140+Math.random()*80
+  });
+ }
+ if(confettiFrame)cancelAnimationFrame(confettiFrame);
+ function tick(){
+  ctx.clearRect(0,0,W,H);
+  let alive=0;
+  for(const p of confettiParticles){
+   p.life++;
+   if(p.life>p.ttl)continue;
+   p.vy+=0.42;p.vx*=0.995;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vrot;
+   const alpha=Math.max(0,1-p.life/p.ttl);
+   ctx.save();
+   ctx.translate(p.x,p.y);
+   ctx.rotate(p.rot);
+   ctx.globalAlpha=alpha;
+   ctx.fillStyle=p.color;
+   ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.55);
+   ctx.restore();
+   alive++;
+  }
+  if(alive>0){confettiFrame=requestAnimationFrame(tick);}else{ctx.clearRect(0,0,W,H);confettiFrame=null;}
+ }
+ tick();
+}
+function showConfettiPopup(hit){
+ $('confettiProvider').textContent=(hit.provider||'unknown').toUpperCase();
+ $('confettiKey').textContent=hit.key||'';
+ $('confettiOverlay').classList.add('show');
+ fireConfetti();
+ playUiSound('success');
+}
+function hideConfettiPopup(){
+ $('confettiOverlay').classList.remove('show');
+ if(confettiFrame){cancelAnimationFrame(confettiFrame);confettiFrame=null;}
+ const canvas=$('confettiCanvas');if(canvas){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);}
+}
+$('confettiClose').addEventListener('click',hideConfettiPopup);
+$('confettiOverlay').addEventListener('click',e=>{if(e.target===$('confettiOverlay'))hideConfettiPopup();});
+$('confettiCopy').addEventListener('click',async()=>{const key=$('confettiKey').textContent;try{await navigator.clipboard.writeText(key);$('confettiCopy').textContent='✓ COPIED';setTimeout(()=>{$('confettiCopy').textContent='⧉ COPY KEY';},1200);}catch{$('confettiCopy').textContent='COPY FAILED';}});
+
+// --- KEY CARDS ---
+function renderHits(items){const box=$('resultBody');box.replaceChildren();$('resultCount').textContent=items.length+(items.length===1?' KEY':' KEYS');lastResults=items;
+ if(!items.length){const d=document.createElement('div');d.className='empty';d.innerHTML='<div class="empty-icon">⌕</div><strong>No live keys</strong><p>Every candidate probed returned 401/403 and was dropped. Try a different target or accept that most leaked keys are already revoked.</p>';box.append(d);return;}
+ items.forEach((item,index)=>{
+  const status=item.status||(item.validated?'live':'dead');
+  const card=document.createElement('article');card.className='api-result';card.style.setProperty('--i',index);
+  const top=document.createElement('div');top.className='api-result-top';
+  const title=document.createElement('div');
+  const h=document.createElement('h3');h.textContent=(item.provider||'unknown').toUpperCase();
+  const p=document.createElement('div');p.className='provider';
+  if(status==='live'){p.textContent='● LIVE — 1-token probe accepted';p.style.color='var(--good)';}
+  else if(status==='limited'){p.textContent='⚠ RATE LIMITED — accepted but throttled/no quota';p.style.color='var(--amber, #edbd70)';}
+  else{p.textContent='○ UNVERIFIED';p.style.color='var(--muted)';}
+  title.append(h,p);top.append(title);
+  const badge=document.createElement('span');badge.className='pill';
+  badge.textContent=status==='live'?'LIVE':status==='limited'?'LIMITED':'UNVERIFIED';
+  badge.style.color=status==='live'?'var(--good)':status==='limited'?'var(--amber, #edbd70)':'var(--muted)';
+  top.append(badge);
+  const meta=document.createElement('div');meta.className='api-meta';
+  const keyRow=document.createElement('div');keyRow.textContent='KEY  '+(item.key||'');keyRow.style.wordBreak='break-all';keyRow.style.userSelect='all';meta.append(keyRow);
+  const actions=document.createElement('div');actions.className='api-actions';
+  const copy=document.createElement('button');copy.type='button';copy.textContent='⧉ COPY KEY';
+  copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(item.key||'');copy.textContent='✓ COPIED';setTimeout(()=>{copy.textContent='⧉ COPY KEY';},1200);}catch{copy.textContent='COPY FAILED';}});
+  actions.append(copy);
+  if(item.id){const share=document.createElement('button');share.type='button';share.textContent='＋ ADD TO LIBRARY';
+   share.addEventListener('click',async()=>{share.disabled=true;share.textContent='SAVING…';try{const r=await api('/api/keys/share',{method:'POST',body:JSON.stringify({key_id:item.id})});share.textContent='✓ ADDED';$('homeLibraryCount').textContent=r.library_count;setStatus('scanStatus','Shared to the global library.','success');}catch(e){share.disabled=false;share.textContent='＋ ADD TO LIBRARY';setStatus('scanStatus',e.message,'error');if(e.message.toLowerCase().includes('sign in')){openAuth();}}});actions.append(share);}
+  card.append(top,meta,actions);box.append(card);
+ });
+}
+$('discoverBtn').addEventListener('click',async()=>{
+ const provider=$('llmProvider').value,key=$('llmKey').value.trim(),model=$('llmModel').value,query=$('researchQuery').value.trim()||'leaked API keys in public github repos, pastes, and docs';
+ if(!key||!model){setStatus('scanStatus','Choose a model and paste your AI provider API key.','error');return;}
+ const btn=$('discoverBtn');btn.disabled=true;btn.textContent='◌  SEARCHING + PROBING…';setStatus('scanStatus','Searching, extracting candidates, and probing with 1-token requests…');
+ $('resultBody').innerHTML='<div class="empty"><div class="empty-icon">◌</div><strong>Research in progress</strong><p>Searching public results, extracting candidates, and probing each with a real 1-token request.</p></div>';$('resultCount').textContent='PROBING';
+ try{
+  const d=await api('/api/discover',{method:'POST',body:JSON.stringify({provider,model,api_key:key,query})});
+  renderHits(d.hits||[]);
+  const stats=d.stats||{live:0,limited:0,dropped_dead:0};
+  setStatus('scanStatus',`Discovery complete · ${stats.live} live, ${stats.limited} rate-limited, ${stats.dropped_dead} dead dropped.`,'success');
+  if(d.has_live&&d.live_keys&&d.live_keys.length>0){setTimeout(()=>showConfettiPopup(d.live_keys[0]),150);}
+ }catch(e){
+  $('resultBody').innerHTML='<div class="empty"><div class="empty-icon">!</div><strong>Discovery could not complete</strong><p></p></div>';$('resultBody').querySelector('p').textContent=e.message;setStatus('scanStatus',e.message,'error');$('resultCount').textContent='ERROR';
+ }finally{btn.disabled=false;btn.textContent='◈  START DISCOVERY';}
+});
+
+// --- LIBRARY ---
+function renderLibrary(items){const grid=$('libraryGrid');grid.replaceChildren();if(!items.length){const d=document.createElement('div');d.className='empty-library';d.textContent='No matching API entries yet.';grid.append(d);return;}
+ items.forEach(item=>{const card=document.createElement('article');card.className='library-entry';const top=document.createElement('div');top.className='entry-top';const left=document.createElement('div');const h=document.createElement('h3');h.textContent=item.name;const p=document.createElement('div');p.className='entry-provider';p.textContent=item.provider;left.append(h,p);const cat=document.createElement('span');cat.className='entry-cat';cat.textContent=item.category||'API';top.append(left,cat);const summary=document.createElement('p');summary.textContent=item.summary||'No description available.';const url=document.createElement('a');url.className='entry-url';url.href=item.docs_url;url.target='_blank';url.rel='noopener noreferrer';url.textContent=item.docs_url;const foot=document.createElement('div');foot.className='entry-foot';const who=document.createElement('span');who.textContent='ADDED BY '+(item.submitted_by||'COMMUNITY');const when=document.createElement('span');when.textContent=(item.created_at||'').slice(0,10);foot.append(who,when);card.append(top,summary,url,foot);grid.append(card);});}
 async function loadLibrary(){try{const q=$('librarySearch').value.trim();const d=await api('/api/library'+(q?'?q='+encodeURIComponent(q):''));renderLibrary(d.items||[]);$('homeLibraryCount').textContent=d.count;}catch(e){$('libraryGrid').textContent=e.message;}}
 $('refreshLibrary').addEventListener('click',loadLibrary);let searchDebounce; $('librarySearch').addEventListener('input',()=>{clearTimeout(searchDebounce);searchDebounce=setTimeout(loadLibrary,250);});
+
+// --- KEYS TAB ---
 async function loadKeys(){try{const q=$('keysSearch').value.trim();const d=await api('/api/keys'+(q?'?validated=1':''));renderKeys(d.items||[],q);}catch(e){$('keysGrid').textContent=e.message;}}
-function renderKeys(items,query){const grid=$('keysGrid');grid.replaceChildren();const filtered=query?items.filter(it=>(it.provider||'').toLowerCase().includes(query.toLowerCase())||(it.key||'').toLowerCase().includes(query.toLowerCase())):items;if(!filtered.length){const d=document.createElement('div');d.className='empty-library';d.textContent=query?'No keys match that filter.':'No keys discovered yet — run a discovery scan.';grid.append(d);return;}filtered.forEach(item=>{const card=document.createElement('article');card.className='library-entry';const top=document.createElement('div');top.className='entry-top';const left=document.createElement('div');const h=document.createElement('h3');h.textContent=(item.provider||'unknown').toUpperCase();const p=document.createElement('div');p.className='entry-provider';p.textContent=item.validated?'● LIVE':'○ UNVERIFIED';p.style.color=item.validated?'var(--good)':'var(--muted)';left.append(h,p);const cat=document.createElement('span');cat.className='entry-cat';cat.textContent=(item.discovered_at||'').slice(0,10);top.append(left,cat);const keyLine=document.createElement('p');keyLine.textContent=item.key;keyLine.style.fontFamily='var(--mono)';keyLine.style.fontSize='10px';keyLine.style.wordBreak='break-all';keyLine.style.userSelect='all';const copy=document.createElement('button');copy.type='button';copy.textContent='⧉ COPY';copy.className='mini-btn';copy.style.minHeight='32px';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(item.key);copy.textContent='✓ COPIED';setTimeout(()=>{copy.textContent='⧉ COPY';},1200);}catch{}});card.append(top,keyLine,copy);grid.append(card);});}
+function renderKeys(items,query){const grid=$('keysGrid');grid.replaceChildren();const filtered=query?items.filter(it=>(it.provider||'').toLowerCase().includes(query.toLowerCase())||(it.key||'').toLowerCase().includes(query.toLowerCase())):items;if(!filtered.length){const d=document.createElement('div');d.className='empty-library';d.textContent=query?'No keys match that filter.':'No keys discovered yet — run a discovery scan.';grid.append(d);return;}
+ filtered.forEach(item=>{const status=item.status||(item.validated?'live':'dead');const card=document.createElement('article');card.className='library-entry';const top=document.createElement('div');top.className='entry-top';const left=document.createElement('div');const h=document.createElement('h3');h.textContent=(item.provider||'unknown').toUpperCase();const p=document.createElement('div');p.className='entry-provider';p.textContent=status==='live'?'● LIVE':status==='limited'?'⚠ LIMITED':'○ UNVERIFIED';p.style.color=status==='live'?'var(--good)':status==='limited'?'var(--amber, #edbd70)':'var(--muted)';left.append(h,p);const cat=document.createElement('span');cat.className='entry-cat';cat.textContent=(item.discovered_at||'').slice(0,10);top.append(left,cat);const keyLine=document.createElement('p');keyLine.textContent=item.key;keyLine.style.fontFamily='var(--mono)';keyLine.style.fontSize='10px';keyLine.style.wordBreak='break-all';keyLine.style.userSelect='all';const actions=document.createElement('div');actions.className='api-actions';const copy=document.createElement('button');copy.type='button';copy.textContent='⧉ COPY';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(item.key);copy.textContent='✓ COPIED';setTimeout(()=>{copy.textContent='⧉ COPY';},1200);}catch{}});actions.append(copy);const share=document.createElement('button');share.type='button';share.textContent='＋ ADD TO LIBRARY';share.addEventListener('click',async()=>{share.disabled=true;share.textContent='SAVING…';try{const r=await api('/api/keys/share',{method:'POST',body:JSON.stringify({key_id:item.id})});share.textContent='✓ ADDED';$('homeLibraryCount').textContent=r.library_count;}catch(e){share.disabled=false;share.textContent='＋ ADD TO LIBRARY';setStatus('scanStatus',e.message,'error');if(e.message.toLowerCase().includes('sign in')){openAuth();}}});actions.append(share);card.append(top,keyLine,actions);grid.append(card);});}
 $('refreshKeys').addEventListener('click',loadKeys);
 let keysDebounce;$('keysSearch').addEventListener('input',()=>{clearTimeout(keysDebounce);keysDebounce=setTimeout(loadKeys,250);});
+
+// --- AUTH ---
 function openAuth(){authMode='login';updateAuthModal();$('authModal').classList.add('open');}function closeAuth(){$('authModal').classList.remove('open');hideStatus('authStatus');}
 function updateAuthModal(){const create=authMode==='signup';$('authTitle').textContent=create?'Create your account.':'Welcome back.';$('authDescription').textContent=create?'Create an account to contribute API details to the community library.':'Sign in to contribute API details to the community library.';$('authSubmit').textContent=create?'CREATE ACCOUNT':'SIGN IN';$('switchAuth').textContent=create?'Already have an account? Sign in':'Create an account';$('authPassword').autocomplete=create?'new-password':'current-password';}
-$('accountBtn').addEventListener('click',()=>{if(currentUser){if(confirm('Sign out of NIGHTSCAN?'))logout();}else openAuth();});$('closeAuth').addEventListener('click',closeAuth);$('authModal').addEventListener('click',e=>{if(e.target===$('authModal'))closeAuth();});$('switchAuth').addEventListener('click',()=>{authMode=authMode==='login'?'signup':'login';updateAuthModal();hideStatus('authStatus');});
+$('accountBtn').addEventListener('click',()=>{if(currentUser){if(confirm('Sign out of NIGHTSCAN?'))logout();}else openAuth();});
+$('closeAuth').addEventListener('click',closeAuth);
+$('authModal').addEventListener('click',e=>{if(e.target===$('authModal'))closeAuth();});
+$('switchAuth').addEventListener('click',()=>{authMode=authMode==='login'?'signup':'login';updateAuthModal();hideStatus('authStatus');});
 $('authForm').addEventListener('submit',async e=>{e.preventDefault();const email=$('authEmail').value.trim(),password=$('authPassword').value;try{const d=await api('/api/auth/'+(authMode==='signup'?'signup':'login'),{method:'POST',body:JSON.stringify({email,password})});currentUser=d.user;csrf=d.csrf||csrf;updateAccount();closeAuth();if(pendingLibraryItem){const item=pendingLibraryItem;pendingLibraryItem=null;await saveLibrary(item);}else setStatus('scanStatus','Signed in as '+currentUser.email+'.','success');}catch(err){setStatus('authStatus',err.message,'error');}});
 $('googleSignIn').addEventListener('click',()=>{location.href='/auth/google';});
 async function logout(){try{await api('/api/auth/logout',{method:'POST',body:JSON.stringify({})});}catch{}currentUser=null;updateAccount();}
 function updateAccount(){$('accountBtn').textContent=currentUser?currentUser.email+' · SIGN OUT':'SIGN IN / CREATE ACCOUNT';}
 async function saveLibrary(item){try{await api('/api/library',{method:'POST',body:JSON.stringify(item)});setStatus('scanStatus','Added '+item.name+' to the shared API Library.','success');playUiSound('success');await loadLibrary();}catch(e){setStatus('scanStatus',e.message,'error');playUiSound('error');}}
-async function init(){fillModels('openai',providerDefaults.openai);try{const b=await api('/api/bootstrap');csrf=b.csrf;currentUser=b.user;updateAccount();$('homeLibraryCount').textContent=b.library_count;$('homeServerStatus').textContent='ONLINE';$('serverState').textContent='SERVER ONLINE';$('serverCopy').textContent='Cloud backend connected. Discovery and key harvesting are available.';if(!b.google_enabled){$('googleSignIn').disabled=true;$('googleSignIn').title='Google sign-in is enabled after GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are configured in Vercel.';}}catch(e){$('homeServerStatus').textContent='OFFLINE';$('serverState').textContent='SERVER UNAVAILABLE';$('serverDot').style.background='var(--bad)';$('serverCopy').textContent='The hosted backend is unavailable. Check the Vercel deployment and its environment variables, then reload.';setStatus('scanStatus','NIGHTSCAN cloud backend is unavailable. Check the Vercel deployment and environment variables.','error');}try{const d=await api('/api/llm/providers');providerData=d.providers||[];}catch{}loadLibrary();}
+
+// --- INIT ---
+async function init(){
+ fillModels('openai',providerDefaults.openai);
+ try{const b=await api('/api/bootstrap');csrf=b.csrf;currentUser=b.user;updateAccount();$('homeLibraryCount').textContent=b.library_count;$('homeServerStatus').textContent='ONLINE';$('serverState').textContent='SERVER ONLINE';$('serverCopy').textContent='Cloud backend connected. Discovery and key harvesting are available.';if(!b.google_enabled){$('googleSignIn').disabled=true;$('googleSignIn').title='Google sign-in is enabled after GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are configured in Vercel.';}}
+ catch(e){$('homeServerStatus').textContent='OFFLINE';$('serverState').textContent='SERVER UNAVAILABLE';$('serverDot').style.background='var(--bad)';$('serverCopy').textContent='The hosted backend is unavailable. Check the Vercel deployment and environment variables, then reload.';setStatus('scanStatus','NIGHTSCAN cloud backend is unavailable. Check the Vercel deployment and environment variables.','error');}
+ try{const d=await api('/api/llm/providers');providerData=d.providers||[];}catch{}
+ loadLibrary();
+}
 
 window.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
-        if ($('authModal').classList.contains('open')) {
-            closeAuth();
-        }
+        if ($('confettiOverlay').classList.contains('show')) { hideConfettiPopup(); return; }
+        if ($('authModal').classList.contains('open')) { closeAuth(); }
         $('sidebar').classList.remove('open');
         return;
     }
-    if (!event.altKey || event.ctrlKey || event.metaKey) {
-        return;
-    }
+    if (!event.altKey || event.ctrlKey || event.metaKey) { return; }
     const activeTag = document.activeElement?.tagName;
-    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(activeTag)) {
-        return;
-    }
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(activeTag)) { return; }
     const shortcuts = {'1': 'home','2': 'scanner','3': 'library','4': 'keys'};
     const destination = shortcuts[event.key];
-    if (destination) {
-        event.preventDefault();
-        switchPage(destination);
-    }
+    if (destination) { event.preventDefault(); switchPage(destination); }
 });
 
 init();
